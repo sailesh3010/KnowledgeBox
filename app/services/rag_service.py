@@ -139,10 +139,11 @@ class RAGService:
         model = self.settings.GEMINI_CHAT_MODEL
         full_prompt = f"{self.SYSTEM_PROMPT}\n\n{prompt}"
 
-        # Attempt with configured model, with automatic fallback to stable model if model not found
+        # Attempt with configured model, with automatic fallback to high-availability flash models
         candidate_models = [model]
-        if model not in ("gemini-2.0-flash", "gemini-1.5-flash"):
-            candidate_models.extend(["gemini-2.0-flash", "gemini-1.5-flash"])
+        for fallback in ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
 
         last_error = None
         for m in candidate_models:

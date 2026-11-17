@@ -88,7 +88,7 @@ Open your browser to:
 The test suite includes 15 isolated unit and integration tests covering chunking, HTML scraping, vector mathematics, REST endpoints, and error validation:
 
 ```bash
-pytest -v
+python -m pytest -v
 ```
 
 ---

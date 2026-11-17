@@ -153,26 +153,41 @@ class GeminiEmbedder(BaseEmbedder):
     async def embed_texts(self, texts: List[str]) -> List[List[float]]:
         if not texts:
             return []
-        try:
-            results = []
-            for t in texts:
-                resp = self.client.models.embed_content(
-                    model=self.model,
-                    contents=t[:8000],
-                )
-                if hasattr(resp, "embeddings") and resp.embeddings:
-                    results.append(resp.embeddings[0].values)
-                elif hasattr(resp, "embedding") and resp.embedding:
-                    results.append(resp.embedding.values)
-                else:
-                    raise ValueError(f"No embeddings returned in Gemini response: {resp}")
-            return results
-        except Exception as e:
-            logger.error(f"Gemini embedding error: {str(e)}")
-            raise ProviderError(
-                message=f"Failed to generate Gemini embeddings: {str(e)}",
-                details={"model": self.model, "error": str(e)},
-            )
+
+        # Candidate models to try in order
+        candidate_models = [self.model]
+        for fallback in ["gemini-embedding-001", "gemini-embedding-2", "text-embedding-004"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        last_error = None
+        for m in candidate_models:
+            try:
+                results = []
+                for t in texts:
+                    resp = self.client.models.embed_content(
+                        model=m,
+                        contents=t[:8000],
+                    )
+                    if hasattr(resp, "embeddings") and resp.embeddings:
+                        results.append(resp.embeddings[0].values)
+                    elif hasattr(resp, "embedding") and resp.embedding:
+                        results.append(resp.embedding.values)
+                    else:
+                        raise ValueError(f"No embeddings returned in Gemini response: {resp}")
+                # Successfully used model m
+                self.model = m
+                return results
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Gemini embedding model '{m}' failed: {str(e)}. Trying alternate fallback model...")
+                continue
+
+        logger.error(f"Gemini embedding error on all candidate models: {str(last_error)}")
+        raise ProviderError(
+            message=f"Failed to generate Gemini embeddings: {str(last_error)}",
+            details={"model": self.model, "error": str(last_error)},
+        )
 
     async def embed_query(self, query: str) -> List[float]:
         results = await self.embed_texts([query])

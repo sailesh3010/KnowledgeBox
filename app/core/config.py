@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # Google Gemini Settings
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_EMBEDDING_MODEL: str = "text-embedding-004"
-    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    GEMINI_CHAT_MODEL: str = "gemini-3-flash-preview"
 
     # Chunking Configuration
     CHUNK_SIZE: int = 500
