@@ -137,19 +137,32 @@ class RAGService:
         from google import genai
         client = genai.Client(api_key=self.settings.GEMINI_API_KEY)
         model = self.settings.GEMINI_CHAT_MODEL
-        try:
-            full_prompt = f"{self.SYSTEM_PROMPT}\n\n{prompt}"
-            response = client.models.generate_content(
-                model=model,
-                contents=full_prompt,
-            )
-            return (response.text or "").strip(), model
-        except Exception as e:
-            logger.error(f"Gemini generation error: {str(e)}")
-            raise ProviderError(
-                message=f"Gemini generation failed: {str(e)}",
-                details={"model": model, "error": str(e)},
-            )
+        full_prompt = f"{self.SYSTEM_PROMPT}\n\n{prompt}"
+
+        # Attempt with configured model, with automatic fallback to stable model if model not found
+        candidate_models = [model]
+        if model not in ("gemini-2.0-flash", "gemini-1.5-flash"):
+            candidate_models.extend(["gemini-2.0-flash", "gemini-1.5-flash"])
+
+        last_error = None
+        for m in candidate_models:
+            try:
+                response = client.models.generate_content(
+                    model=m,
+                    contents=full_prompt,
+                )
+                text = (response.text or "").strip()
+                return text, m
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Gemini model '{m}' call failed ({str(e)}). Checking alternate models if available...")
+                continue
+
+        logger.error(f"Gemini generation error on all candidate models: {str(last_error)}")
+        raise ProviderError(
+            message=f"Gemini generation failed: {str(last_error)}",
+            details={"model": model, "error": str(last_error)},
+        )
 
     def _generate_local(
         self,

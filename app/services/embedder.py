@@ -160,7 +160,12 @@ class GeminiEmbedder(BaseEmbedder):
                     model=self.model,
                     contents=t[:8000],
                 )
-                results.append(resp.embedding.values)
+                if hasattr(resp, "embeddings") and resp.embeddings:
+                    results.append(resp.embeddings[0].values)
+                elif hasattr(resp, "embedding") and resp.embedding:
+                    results.append(resp.embedding.values)
+                else:
+                    raise ValueError(f"No embeddings returned in Gemini response: {resp}")
             return results
         except Exception as e:
             logger.error(f"Gemini embedding error: {str(e)}")
