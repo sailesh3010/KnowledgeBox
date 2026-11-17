@@ -1,0 +1,164 @@
+{
+  "info": {
+    "name": "Turium AI Knowledge Inbox API",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Complete test suite for Turium AI Knowledge Inbox: Ingestion, Retrieval, RAG Q&A, and Error Validation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Ingest Text Note (POST /ingest)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"note\",\n  \"title\": \"Postman Test Note\",\n  \"content\": \"Postman allows developers to evaluate request and response shapes, error handling, and latency.\",\n  \"metadata\": {\n    \"env\": \"testing\",\n    \"source\": \"postman\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/ingest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["ingest"]
+        },
+        "description": "Ingests a plain text note, generates chunks and vector embeddings, stores in SQLite, and returns 201 Created."
+      }
+    },
+    {
+      "name": "2. Ingest Web URL (POST /ingest)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"url\",\n  \"content\": \"https://en.wikipedia.org/wiki/Retrieval-augmented_generation\",\n  \"title\": \"RAG Wikipedia Article\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/ingest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["ingest"]
+        },
+        "description": "Fetches page content server-side, cleans boilerplate and scripts, generates semantic chunks and embeddings, and returns 201 Created."
+      }
+    },
+    {
+      "name": "3. List Saved Items (GET /items)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/items?limit=100&offset=0",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["items"],
+          "query": [
+            { "key": "limit", "value": "100" },
+            { "key": "offset", "value": "0" }
+          ]
+        },
+        "description": "Lists all saved items with preview, metadata, word counts, and chunk counts."
+      }
+    },
+    {
+      "name": "4. Query Knowledge Inbox (POST /query)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"What is Retrieval-Augmented Generation?\",\n  \"top_k\": 4,\n  \"min_score\": 0.05\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/query",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["query"]
+        },
+        "description": "Performs cosine similarity search over vector store and generates grounded response citing sources."
+      }
+    },
+    {
+      "name": "5. Error Handling - Invalid URL Validation (POST /ingest)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"url\",\n  \"content\": \"not-a-valid-http-url\"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/ingest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["ingest"]
+        },
+        "description": "Tests input validation for malformed URLs. Expects 422 Unprocessable Entity with error envelope."
+      }
+    },
+    {
+      "name": "6. Error Handling - Empty Content (POST /ingest)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"note\",\n  \"content\": \"   \"\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/ingest",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["ingest"]
+        },
+        "description": "Tests input validation for whitespace-only content. Expects 422 Unprocessable Entity."
+      }
+    },
+    {
+      "name": "7. Error Handling - Non-Existent Item (GET /items/{id})",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/items/non-existent-uuid-12345",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["items", "non-existent-uuid-12345"]
+        },
+        "description": "Tests 404 Not Found error handling with standard error schema."
+      }
+    },
+    {
+      "name": "8. System Health & Models (GET /health)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/health",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["health"]
+        },
+        "description": "Returns active AI models, items count, chunks count, and status."
+      }
+    }
+  ]
+}
