@@ -185,6 +185,11 @@ async def query_knowledge_inbox(payload: QueryRequest):
     summary="System health check",
     description="Returns server status, active AI provider models, and database statistics.",
 )
+@router.get(
+    "/healthz",
+    response_model=HealthResponse,
+    include_in_schema=False,
+)
 async def health_check():
     settings = get_settings()
     stats = db.get_stats()
